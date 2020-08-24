@@ -16,6 +16,8 @@ export default class AttachmentService extends AbstractService {
 		return model
 	}
 
+	uploadProgress = 0
+
 	useCreateInterceptor() {
 		return false
 	}
@@ -32,24 +34,19 @@ export default class AttachmentService extends AbstractService {
 		return data
 	}
 
-	getBlobUrl(model) {
-		return this.http({
+	download(model) {
+		this.http({
 			url: '/tasks/' + model.taskId + '/attachments/' + model.id,
 			method: 'GET',
 			responseType: 'blob',
-		}).then(response => {
-			return window.URL.createObjectURL(new Blob([response.data]));
-		})
-	}
-
-	download(model) {
-		this.getBlobUrl(model).then(url => {
+		}).then((response) => {
+			const url = window.URL.createObjectURL(new Blob([response.data]));
 			const link = document.createElement('a');
 			link.href = url;
 			link.setAttribute('download', model.file.name);
 			link.click();
 			window.URL.revokeObjectURL(url);
-		})
+		});
 	}
 
 	/**
@@ -59,15 +56,36 @@ export default class AttachmentService extends AbstractService {
 	 * @returns {Promise<any|never>}
 	 */
 	create(model, files) {
-		const data = new FormData()
+
+		let data = new FormData()
 		for (let i = 0; i < files.length; i++) {
 			// TODO: Validation of file size
 			data.append('files', new Blob([files[i]]), files[i].name);
 		}
 
-		return this.uploadFormData(
+		const cancel = this.setLoading()
+		return this.http.put(
 			this.getReplacedRoute(this.paths.create, model),
-			data
+			data,
+			{
+				headers: {
+					'Content-Type':
+						'multipart/form-data; boundary=' + data._boundary,
+				},
+				onUploadProgress: progressEvent => {
+					this.uploadProgress = Math.round( (progressEvent.loaded * 100) / progressEvent.total );
+				}
+			}
 		)
+			.catch(error => {
+				return this.errorHandler(error)
+			})
+			.then(response => {
+				return Promise.resolve(this.modelCreateFactory(response.data))
+			})
+			.finally(() => {
+				this.uploadProgress = 0
+				cancel()
+			})
 	}
 }

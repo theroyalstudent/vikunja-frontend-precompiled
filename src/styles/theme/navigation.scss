@@ -37,7 +37,6 @@
 
   .navbar-end {
     margin-left: 0;
-    align-items: center;
   }
 
   @media screen and (max-width: $desktop) {
@@ -117,7 +116,7 @@
     bottom: 0;
     top: $navbar-height;
     overflow-x: auto;
-    width: $navbar-width;
+    width: 17vw;
 
     padding: 0 0 1em;
     left: -147vw;

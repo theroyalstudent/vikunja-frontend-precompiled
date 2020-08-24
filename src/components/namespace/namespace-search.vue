@@ -9,7 +9,6 @@
 			@search-change="findNamespaces"
 			@select="select"
 			placeholder="Search for a namespace..."
-			:showNoOptions="false"
 			label="title"
 			track-by="id">
 		<template slot="clear" slot-scope="props">
@@ -22,10 +21,10 @@
 </template>
 
 <script>
+	import multiselect from 'vue-multiselect'
+
 	import NamespaceService from '../../services/namespace'
 	import NamespaceModel from '../../models/namespace'
-	import LoadingComponent from '../misc/loading'
-	import ErrorComponent from '../misc/error'
 
 	export default {
 		name: 'namespace-search',
@@ -37,12 +36,7 @@
 			}
 		},
 		components: {
-			multiselect: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "multiselect" */ 'vue-multiselect'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
+			multiselect,
 		},
 		created() {
 			this.namespaceService = new NamespaceService()

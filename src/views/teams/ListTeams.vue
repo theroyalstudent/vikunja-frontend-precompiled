@@ -1,5 +1,5 @@
 <template>
-	<div class="content loader-container is-max-width-desktop" v-bind:class="{ 'is-loading': teamService.loading}">
+	<div class="content loader-container" v-bind:class="{ 'is-loading': teamService.loading}">
 		<router-link :to="{name:'teams.create'}" class="button is-success button-right" >
 			<span class="icon is-small">
 				<icon icon="plus"/>
@@ -21,7 +21,7 @@
 	import TeamService from '../../services/team'
 	
 	export default {
-		name: 'ListTeams',
+		name: "ListTeams",
 		data() {
 			return {
 				teamService: TeamService,
@@ -31,9 +31,6 @@
 		created() {
 			this.teamService = new TeamService()
 			this.loadTeams()
-		},
-		mounted() {
-			this.setTitle('Teams')
 		},
 		methods: {
 			loadTeams() {

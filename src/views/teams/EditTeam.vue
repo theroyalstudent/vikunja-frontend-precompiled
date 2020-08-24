@@ -1,5 +1,5 @@
 <template>
-	<div class="loader-container is-max-width-desktop" v-bind:class="{ 'is-loading': teamService.loading}">
+	<div class="loader-container" v-bind:class="{ 'is-loading': teamService.loading}">
 		<div class="card is-fullwidth" v-if="userIsAdmin">
 			<header class="card-header">
 				<p class="card-header-title">
@@ -29,21 +29,20 @@
 						<div class="field">
 							<label class="label" for="teamdescription">Description</label>
 							<div class="control">
-								<editor
+								<textarea
 										:class="{ 'disabled': teamService.loading}"
 										:disabled="teamService.loading"
+										class="textarea"
 										placeholder="The teams description goes here..."
 										id="teamdescription"
-										v-model="team.description"
-										:preview-is-default="false"
-								/>
+										v-model="team.description"></textarea>
 							</div>
 						</div>
 					</form>
 
 					<div class="columns bigbuttons">
 						<div class="column">
-							<button @click="submit()" class="button is-primary is-fullwidth"
+							<button @click="submit()" class="button is-success is-fullwidth"
 									:class="{ 'is-loading': teamService.loading}">
 								Save
 							</button>
@@ -61,6 +60,7 @@
 			</div>
 		</div>
 		<div class="card is-fullwidth">
+
 			<header class="card-header">
 				<p class="card-header-title">
 					Team Members
@@ -80,8 +80,7 @@
 									:loading="userService.loading"
 									:internal-search="true"
 									@search-change="findUser"
-									placeholder="Type to search..."
-									:showNoOptions="false"
+									placeholder="Type to search"
 									label="username"
 									track-by="id">
 								<template slot="clear" slot-scope="props">
@@ -128,7 +127,6 @@
 						</td>
 						<td class="actions" v-if="userIsAdmin">
 							<button @click="toggleUserType(m)" class="button buttonright is-primary"
-									:class="{'is-loading': teamMemberService.loading}"
 									v-if="m.id !== userInfo.id">
 								Make
 								<template v-if="!m.admin">
@@ -139,7 +137,6 @@
 								</template>
 							</button>
 							<button @click="() => {member = m; showUserDeleteModal = true}" class="button is-danger"
-									:class="{'is-loading': teamMemberService.loading}"
 									v-if="m.id !== userInfo.id">
 									<span class="icon is-small">
 										<icon icon="trash-alt"/>
@@ -177,6 +174,7 @@
 
 <script>
 	import router from '../../router'
+	import multiselect from 'vue-multiselect'
 	import {mapState} from 'vuex'
 
 	import TeamService from '../../services/team'
@@ -185,9 +183,6 @@
 	import TeamMemberModel from '../../models/teamMember'
 	import UserModel from '../../models/user'
 	import UserService from '../../services/user'
-	import LoadingComponent from '../../components/misc/loading'
-	import ErrorComponent from '../../components/misc/error'
-	import Rights from '../../models/rights.json'
 
 	export default {
 		name: 'EditTeam',
@@ -201,6 +196,7 @@
 
 				showDeleteModal: false,
 				showUserDeleteModal: false,
+				userIsAdmin: false,
 
 				newMember: UserModel,
 				foundUsers: [],
@@ -210,18 +206,7 @@
 			}
 		},
 		components: {
-			multiselect: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "multiselect" */ 'vue-multiselect'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
-			editor: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "editor" */ '../../components/input/editor'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
+			multiselect,
 		},
 		created() {
 			this.teamService = new TeamService()
@@ -231,23 +216,24 @@
 		},
 		watch: {
 			// call again the method if the route changes
-			'$route': 'loadTeam',
+			'$route': 'loadTeam'
 		},
-		computed: {
-			userIsAdmin() {
-				return this.team && this.team.maxRight && this.team.maxRight > Rights.READ
-			},
-			...mapState({
-				userInfo: state => state.auth.info,
-			}),
-		},
+		computed: mapState({
+			userInfo: state => state.auth.info,
+		}),
 		methods: {
 			loadTeam() {
 				this.team = new TeamModel({id: this.teamId})
 				this.teamService.get(this.team)
 					.then(response => {
 						this.$set(this, 'team', response)
-						this.setTitle(`Edit Team ${this.team.name}`)
+						let members = response.members
+						for (const m in members) {
+							members[m].teamId = this.teamId
+							if (members[m].id === this.userInfo.id && members[m].admin) {
+								this.userIsAdmin = true
+							}
+						}
 					})
 					.catch(e => {
 						this.error(e, this)
@@ -308,15 +294,11 @@
 			},
 			toggleUserType(member) {
 				member.admin = !member.admin
-				this.teamMemberService.update(member)
-					.then(r => {
-						for (const tm in this.team.members) {
-							if (this.team.members[tm].id === member.id) {
-								this.$set(this.team.members[tm], 'admin', r.admin)
-								break
-							}
-						}
-						this.success({message: 'The team member was successfully made ' + (member.admin ? 'admin' : 'member') + '.'}, this)
+				this.teamMemberService.delete(member)
+					.then(() => this.teamMemberService.create(member))
+					.then(() => {
+						this.loadTeam()
+						this.success({message: 'The team member was successfully made ' + (member.admin ? 'admin': 'member') + '.'}, this)
 					})
 					.catch(e => {
 						this.error(e, this)
@@ -339,7 +321,7 @@
 			clearAll() {
 				this.$set(this, 'foundUsers', [])
 			},
-		},
+		}
 	}
 </script>
 
@@ -354,9 +336,5 @@
 
 	.team-members {
 		padding: 0;
-
-		.table {
-			border-top: 0;
-		}
 	}
 </style>

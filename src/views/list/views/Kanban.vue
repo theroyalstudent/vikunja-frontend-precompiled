@@ -5,15 +5,10 @@
 				<h2
 						class="title input"
 						contenteditable="true"
-						spellcheck="false"
 						@focusout="() => saveBucketTitle(bucket.id)"
 						:ref="`bucket${bucket.id}title`"
 						@keyup.ctrl.enter="() => saveBucketTitle(bucket.id)">{{ bucket.title }}</h2>
-				<div
-						class="dropdown is-right options"
-						:class="{ 'is-active': bucketOptionsDropDownActive[bucket.id] }"
-						v-if="canWrite"
-				>
+				<div class="dropdown is-right options" :class="{ 'is-active': bucketOptionsDropDownActive[bucket.id] }">
 					<div class="dropdown-trigger" @click.stop="toggleBucketDropdown(bucket.id)">
 						<span class="icon">
 							<icon icon="ellipsis-v"/>
@@ -34,10 +29,8 @@
 					</div>
 				</div>
 			</div>
-			<div class="tasks" :ref="`tasks-container${bucket.id}`">
-				<!-- Make the component either a div or a draggable component based on the user rights -->
-				<component
-						:is="canWrite ? 'Container' : 'div'"
+			<div class="tasks">
+				<Container
 						@drop="e => onDrop(bucket.id, e)"
 						group-name="buckets"
 						:get-child-payload="getTaskPayload(bucket.id)"
@@ -47,23 +40,17 @@
 						drag-class-drop="ghost-task-drop"
 						drag-handle-selector=".task.draggable"
 				>
-					<!-- Make the component either a div or a draggable component based on the user rights -->
-					<component
-							v-for="task in bucket.tasks"
-							:key="`bucket${bucket.id}-task${task.id}`"
-							:is="canWrite ? 'Draggable' : 'div'"
-					>
-						<div
+					<Draggable v-for="task in bucket.tasks" :key="`bucket${bucket.id}-task${task.id}`">
+						<router-link
+								:to="{ name: 'task.kanban.detail', params: { id: task.id } }"
 								class="task loader-container draggable"
+								tag="div"
 								:class="{
 							'is-loading': taskService.loading && taskUpdating[task.id],
 							'draggable': !taskService.loading || !taskUpdating[task.id],
 							'has-light-text': !colorIsDark(task.hexColor) && task.hexColor !== `#${task.defaultColor}`,
 						}"
 								:style="{'background-color': task.hexColor !== '#' && task.hexColor !== `#${task.defaultColor}` ? task.hexColor : false}"
-								@click.ctrl="() => markTaskAsDone(task)"
-								@click.meta="() => markTaskAsDone(task)"
-								@click.exact="() => $router.push({ name: 'task.kanban.detail', params: { id: task.id } })"
 						>
 							<span class="task-id">
 								<span class="is-done" v-if="task.done">Done</span>
@@ -113,11 +100,11 @@
 									</span>
 								</div>
 							</div>
-						</div>
-					</component>
-				</component>
+						</router-link>
+					</Draggable>
+				</Container>
 			</div>
-			<div class="bucket-footer" v-if="canWrite">
+			<div class="bucket-footer">
 				<div class="field" v-if="showNewTaskInput[bucket.id]">
 					<div class="control">
 						<input
@@ -125,7 +112,7 @@
 								class="input"
 								type="text"
 								placeholder="Enter the new task text..."
-								v-focus.always
+								v-focus
 								@focusout="toggleShowNewTaskInput(bucket.id)"
 								@keyup.esc="toggleShowNewTaskInput(bucket.id)"
 								@keyup.enter="addTaskToBucket(bucket.id)"
@@ -155,13 +142,13 @@
 			</div>
 		</div>
 
-		<div class="bucket new-bucket" v-if="!loading && canWrite">
+		<div class="bucket new-bucket" v-if="!loading">
 			<input
 					v-if="showNewBucketInput"
 					class="input"
 					type="text"
 					placeholder="Enter the new bucket title..."
-					v-focus.always
+					v-focus
 					@focusout="() => showNewBucketInput = false"
 					@keyup.esc="() => showNewBucketInput = false"
 					@keyup.enter="createNewBucket"
@@ -215,7 +202,6 @@
 	import {mapState} from 'vuex'
 	import {LOADING} from '../../../store/mutation-types'
 	import {saveListView} from '../../../helpers/saveListView'
-	import Rights from '../../../models/rights.json'
 
 	export default {
 		name: 'Kanban',
@@ -253,7 +239,7 @@
 		created() {
 			this.taskService = new TaskService()
 			this.loadBuckets()
-			this.$nextTick(() => document.addEventListener('click', this.closeBucketDropdowns))
+			setTimeout(() => document.addEventListener('click', this.closeBucketDropdowns), 0)
 
 			// Save the current list view to local storage
 			// We use local storage and not vuex here to make it persistent across reloads.
@@ -266,7 +252,6 @@
 			buckets: state => state.kanban.buckets,
 			loadedListId: state => state.kanban.listId,
 			loading: LOADING,
-			canWrite: state => state.currentList.maxRight > Rights.READ,
 		}),
 		methods: {
 			loadBuckets() {
@@ -277,14 +262,9 @@
 				}
 
 				// Only load buckets if we don't already loaded them
-				if (
-					this.loadedListId === this.$route.params.listId ||
-					this.loadedListId === parseInt(this.$route.params.listId)
-				) {
+				if (this.loadedListId === this.$route.params.listId) {
 					return
 				}
-
-				console.debug(`Loading buckets, loadedListId = ${this.loadedListId}, $route.params =`, this.$route.params)
 
 				this.$store.dispatch('kanban/loadBucketsForList', this.$route.params.listId)
 					.catch(e => {
@@ -349,16 +329,6 @@
 						})
 				}
 			},
-			markTaskAsDone(task) {
-				task.done = !task.done
-				this.$store.dispatch('tasks/update', task)
-					.catch(e => {
-						this.error(e, this)
-					})
-					.finally(() => {
-						this.$set(this.taskUpdating, task.id, false)
-					})
-			},
 			getTaskPayload(bucketId) {
 				return index => {
 					const bucket = this.buckets[filterObject(this.buckets, b => b.id === bucketId)]
@@ -398,7 +368,7 @@
 				const task = new TaskModel({
 					title: this.newTaskText,
 					bucketId: this.buckets[bi].id,
-					listId: this.$route.params.listId,
+					listId: this.$route.params.listId
 				})
 
 				this.taskService.create(task)
@@ -409,12 +379,6 @@
 					.catch(e => {
 						this.error(e, this)
 					})
-					.finally(() => {
-						if (!this.$refs[`tasks-container${task.bucketId}`][0]) {
-							return
-						}
-						this.$refs[`tasks-container${task.bucketId}`][0].scrollTop = this.$refs[`tasks-container${task.bucketId}`][0].scrollHeight
-					})
 			},
 			createNewBucket() {
 				if (this.newBucketTitle === '') {
@@ -423,7 +387,7 @@
 
 				const newBucket = new BucketModel({
 					title: this.newBucketTitle,
-					listId: parseInt(this.$route.params.listId),
+					listId: parseInt(this.$route.params.listId)
 				})
 
 				this.$store.dispatch('kanban/createBucket', newBucket)

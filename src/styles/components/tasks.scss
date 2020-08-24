@@ -2,23 +2,24 @@
   margin-top: 1rem;
   padding: 0;
   text-align: left;
+  max-width: 80vw;
 
   @media screen and (min-width: $tablet) {
     &.short {
       max-width: 53vw;
     }
   }
-
+  
   @media screen and (max-width: $tablet) {
     max-width: 100%;
   }
 
-  &.noborder {
+  &.noborder{
     margin: 1rem -0.5rem;
   }
 
   .task {
-    display: flex;
+    display: block;
     padding: 0.5rem 1rem;
     border-bottom: 1px solid darken(#fff, 10%);
     transition: background-color $transition;
@@ -28,7 +29,7 @@
     }
 
     span:not(.tag) {
-      width: 100%;
+      width: calc(100% - 40px);
       display: inline-block;
       cursor: pointer;
 
@@ -39,14 +40,13 @@
         text-overflow: ellipsis;
         overflow: hidden;
         display: inline-block;
-        max-width: calc(#{$desktop} - 27px - 2rem); // The max width of the outer container minus the padding
-        width: calc(100% - 2rem); // The max width of the outer container minus the padding
+        width: 94%;
 
-        @media screen and (max-width: $desktop) {
-          max-width: calc(100vw - 27px - 2rem - 1.5rem - 3rem); // 1.5rem is the padding of the tasks container, 3rem is the padding of .app-container
+        @media screen and (max-width: $tablet) {
+          width: 89%;
         }
 
-        .overdue {
+        .overdue{
           color: $red;
         }
 
@@ -56,10 +56,6 @@
           font-size: .9em;
           vertical-align: text-bottom;
         }
-      }
-
-      .fancycheckbox span {
-        display: none;
       }
 
       .tag {
@@ -84,7 +80,7 @@
       }
     }
 
-    .tasktext.done {
+    .tasktext.done{
       text-decoration: line-through;
       color: $grey;
     }
@@ -102,7 +98,7 @@
       vertical-align: middle;
     }
 
-    .settings {
+    .settings{
       float: right;
       width: 24px;
       cursor: pointer;
@@ -114,27 +110,13 @@
   }
 }
 
-.is-menu-enabled .tasks .task span:not(.tag) {
-  .tasktext, &.tasktext {
-    @media screen and (max-width: $desktop) {
-      max-width: calc(100vw - 27px - 2rem - 1.5rem - 3rem - #{$navbar-width}); // 1.5rem is the padding of the tasks container, 3rem is the padding of .app-container
-    }
-
-    // Duplicated rule to have it work properly in at least some browsers
-    // This should be fine as the ui doesn't work in rare edge cases to begin with
-    @media screen and (max-width: calc(#{$desktop} + #{$navbar-width})) {
-      max-width: calc(100vw - 27px - 2rem - 1.5rem - 3rem - #{$navbar-width}); // 1.5rem is the padding of the tasks container, 3rem is the padding of .app-container
-    }
-  }
-}
-
-.taskedit {
+.taskedit{
   min-height: calc(100% - 1rem);
   margin-top: 1rem;
 
 
-  .priority-select {
-    .select, select {
+  .priority-select{
+    .select, select{
       width: 100%;
     }
   }
@@ -143,102 +125,28 @@
     list-style: none;
     margin: 0;
 
-    li {
+    li{
       padding: 0.5em 0.5em 0;
 
-      a {
+      a{
         float: right;
         color: $red;
         transition: all $transition;
 
-        &:hover {
+        &:hover{
           color: darken($red, 15);
         }
       }
     }
   }
 
-  .tag {
+  .tag{
     margin-right: 0.5em;
     margin-bottom: 0.5em;
 
-    &:last-child {
+    &:last-child{
       margin-right: 0;
     }
   }
 }
 
-.show-tasks {
-  h3 {
-    text-align: left;
-
-    &.nothing {
-      text-align: center;
-      margin-top: 3em;
-    }
-
-    .input {
-      width: 190px;
-      vertical-align: middle;
-      margin: .5rem 0;
-    }
-  }
-
-  img {
-    margin-top: 2em;
-  }
-
-  .spinner.is-loading:after {
-    margin-left: calc(40% - 1em);
-  }
-}
-
-.defer-task {
-  $defer-task-max-width: 350px;
-
-  position: absolute;
-  width: 100%;
-  max-width: $defer-task-max-width;
-  border-radius: $radius;
-  border: 1px solid $grey-lighter;
-  padding: 1rem;
-  margin: 1rem;
-  background: $white;
-  color: $text;
-  cursor: default;
-  z-index: 10;
-
-  input.input {
-    display: none;
-  }
-
-  .flatpickr-calendar {
-    margin: 0 auto;
-    box-shadow: none;
-
-    span {
-      width: auto !important;
-    }
-  }
-
-  .defer-days {
-    justify-content: space-between;
-    display: flex;
-    margin: .5rem 0;
-  }
-
-  @media screen and (max-width: ($defer-task-max-width + 100px)) { // 100px is roughly the size the pane is pulled to the right
-    left: .5rem;
-    right: .5rem;
-    max-width: 100%;
-    width: calc(100vw - 1rem - 2rem);
-
-    .flatpickr-calendar {
-      max-width: 100%;
-
-      .flatpickr-innerContainer {
-        overflow: scroll;
-      }
-    }
-  }
-}

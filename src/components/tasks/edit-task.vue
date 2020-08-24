@@ -3,28 +3,17 @@
 		<div class="field">
 			<label class="label" for="tasktext">Task Text</label>
 			<div class="control">
-				<input
-						v-focus
-						:class="{ 'disabled': taskService.loading}"
-						:disabled="taskService.loading"
-						class="input"
-						type="text"
-						id="tasktext"
-						placeholder="The task text is here..."
-						v-model="taskEditTask.title"
-						@change="editTaskSubmit()"/>
+				<input v-focus :class="{ 'disabled': taskService.loading}" :disabled="taskService.loading" class="input"
+					type="text" id="tasktext" placeholder="The task text is here..." v-model="taskEditTask.title" @change="editTaskSubmit()">
 			</div>
 		</div>
 		<div class="field">
 			<label class="label" for="taskdescription">Description</label>
 			<div class="control">
-				<editor
-						placeholder="The tasks description goes here..."
-						id="taskdescription"
-						v-model="taskEditTask.description"
-						:preview-is-default="false"
-						v-if="editorActive"
-				/>
+				<textarea :class="{ 'disabled': taskService.loading}" :disabled="taskService.loading" class="textarea"
+					placeholder="The tasks description goes here..." id="taskdescription"
+					v-model="taskEditTask.description" @change="editTaskSubmit()">
+				</textarea>
 			</div>
 		</div>
 
@@ -117,10 +106,7 @@
 
 		<div class="field has-addons">
 			<div class="control is-expanded">
-				<edit-assignees
-						:task-id="taskEditTask.id"
-						:list-id="taskEditTask.listId"
-						:initial-assignees="taskEditTask.assignees"/>
+				<edit-assignees :task-id="taskEditTask.id" :list-id="taskEditTask.listId" :initial-assignees="taskEditTask.assignees"/>
 			</div>
 		</div>
 
@@ -132,10 +118,10 @@
 		</div>
 
 		<related-tasks
-				class="is-narrow"
-				:task-id="task.id"
-				:list-id="task.listId"
-				:initial-related-tasks="task.relatedTasks"
+			class="is-narrow"
+			:task-id="task.id"
+			:list-id="task.listId"
+			:initial-related-tasks="task.relatedTasks"
 		/>
 
 		<button type="submit" class="button is-success is-fullwidth" :class="{ 'is-loading': taskService.loading}">
@@ -161,8 +147,6 @@
 	import RepeatAfter from './partials/repeatAfter'
 	import Reminders from './partials/reminders'
 	import ColorPicker from '../input/colorPicker'
-	import LoadingComponent from '../misc/loading'
-	import ErrorComponent from '../misc/error'
 
 	export default {
 		name: 'edit-task',
@@ -174,7 +158,6 @@
 
 				priorities: priorities,
 				list: {},
-				editorActive: false,
 				newTask: TaskModel,
 				isTaskEdit: false,
 				taskEditTask: TaskModel,
@@ -198,12 +181,6 @@
 			PercentDoneSelect,
 			PrioritySelect,
 			flatPickr,
-			editor: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "editor" */ '../../components/input/editor'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
 		},
 		props: {
 			task: {
@@ -229,13 +206,6 @@
 				this.taskEditTask.dueDate = +new Date(this.task.dueDate) === 0 ? null : this.task.dueDate
 				this.taskEditTask.startDate = +new Date(this.task.startDate) === 0 ? null : this.task.startDate
 				this.taskEditTask.endDate = +new Date(this.task.endDate) === 0 ? null : this.task.endDate
-				// This makes the editor trigger its mounted function again which makes it forget every input
-				// it currently has in its textarea. This is a counter-hack to a hack inside of vue-easymde
-				// which made it impossible to detect change from the outside. Therefore the component would
-				// not update if new content from the outside was made available.
-				// See https://github.com/NikulinIlya/vue-easymde/issues/3
-				this.editorActive = false
-				this.$nextTick(() => this.editorActive = true)
 			},
 			editTaskSubmit() {
 				this.taskService.update(this.taskEditTask)

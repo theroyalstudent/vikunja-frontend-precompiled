@@ -66,7 +66,6 @@
 					{{ errorMessage }}
 				</div>
 			</form>
-			<legal/>
 		</div>
 	</div>
 </template>
@@ -78,12 +77,8 @@
 	import {HTTP} from '../../http-common'
 	import message from '../../message'
 	import {ERROR_MESSAGE, LOADING} from '../../store/mutation-types'
-	import legal from '../../components/misc/legal'
 
 	export default {
-		components: {
-			legal,
-		},
 		data() {
 			return {
 				confirmedEmailSuccess: false,
@@ -111,9 +106,6 @@
 			if (this.authenticated) {
 				router.push({name: 'home'})
 			}
-		},
-		created() {
-			this.setTitle('Login')
 		},
 		computed: mapState({
 			registrationEnabled: state => state.config.registrationEnabled,

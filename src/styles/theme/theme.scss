@@ -1,7 +1,5 @@
 @import '../../../node_modules/bulma/bulma';
 
-@import 'fonts';
-
 @import 'variables-derived';
 
 *, *:hover, *:active, *:focus {
@@ -64,21 +62,4 @@ button.table {
 
 .pagination {
   padding-bottom: 1em;
-
-  .pagination-previous, .pagination-next {
-    &:not(:disabled):hover {
-      background: $button-background-color;
-      cursor: pointer;
-    }
-  }
-}
-
-.is-max-width-desktop {
-  width: 100%;
-  max-width: $desktop;
-  margin: 0 auto;
-}
-
-.has-no-shadow {
-  box-shadow: none !important;
 }

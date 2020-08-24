@@ -34,10 +34,7 @@
 							:style="{ 'opacity': currentList.title === '' ? '0': '1' }">
 						{{ currentList.title === '' ? 'Loading...': currentList.title}}
 					</h1>
-					<router-link
-							:to="{ name: 'list.edit', params: { id: currentList.id } }"
-							class="icon"
-							v-if="canWriteCurrentList">
+					<router-link :to="{ name: 'list.edit', params: { id: currentList.id } }" class="icon">
 						<icon icon="cog" size="2x"/>
 					</router-link>
 				</div>
@@ -47,10 +44,10 @@
 						<a @click="refreshApp()" class="button is-primary noshadow">Update Now</a>
 					</div>
 					<div class="user">
-						<img :src="userAvatar" class="avatar" alt=""/>
+						<img :src="userInfo.getAvatarUrl()" class="avatar" alt=""/>
 						<div class="dropdown is-right is-active">
 							<div class="dropdown-trigger">
-								<button class="button noshadow" @click.stop="userMenuActive = !userMenuActive">
+								<button class="button noshadow" @click="userMenuActive = !userMenuActive">
 									<span class="username">{{userInfo.username}}</span>
 									<span class="icon is-small">
 									<icon icon="chevron-down"/>
@@ -63,9 +60,6 @@
 										<router-link :to="{name: 'user.settings'}" class="dropdown-item">
 											Settings
 										</router-link>
-										<a :href="imprintUrl" v-if="imprintUrl" class="dropdown-item" target="_blank">Imprint</a>
-										<a :href="privacyPolicyUrl" v-if="privacyPolicyUrl" class="dropdown-item" target="_blank">Privacy policy</a>
-										<a @click="keyboardShortcutsActive = true" class="dropdown-item">Keyboard Shortcuts</a>
 										<a @click="logout()" class="dropdown-item">
 											Logout
 										</a>
@@ -141,11 +135,7 @@
 								</li>
 							</ul>
 						</div>
-
-						<a @click="menuActive = false" class="collapse-menu-button" v-shortkey="['ctrl', 'e']" @shortkey="() => menuActive = !menuActive">
-							Collapse Menu
-						</a>
-
+						<a @click="menuActive = false" class="collapse-menu-button">Collapse Menu</a>
 						<aside class="menu namespaces-lists">
 							<div class="spinner" :class="{ 'is-loading': namespaceService.loading}"></div>
 							<template v-for="n in namespaces">
@@ -191,24 +181,20 @@
 										class="checkinput"/>
 								<div class="more-container" :key="n.id + 'child'">
 									<ul class="menu-list can-be-hidden">
-										<template v-for="l in n.lists">
-											<!-- This is a bit ugly but vue wouldn't want to let me filter this - probably because the lists
-													are nested inside of the namespaces makes it a lot harder.-->
-											<li v-if="!l.isArchived" :key="l.id">
-												<router-link
-														:to="{ name: 'list.index', params: { listId: l.id} }"
-														:class="{'router-link-exact-active': currentList.id === l.id}">
-													<span class="name">
-														<span
-																class="color-bubble"
-																v-if="l.hexColor !== ''"
-																:style="{ backgroundColor: l.hexColor }">
-														</span>
-														{{l.title}}
+										<li v-for="l in n.lists" :key="l.id">
+											<router-link
+													:to="{ name: 'list.index', params: { listId: l.id} }"
+													:class="{'router-link-exact-active': currentList.id === l.id}">
+												<span class="name">
+													<span
+															class="color-bubble"
+															v-if="l.hexColor !== ''"
+															:style="{ backgroundColor: l.hexColor }">
 													</span>
-												</router-link>
-											</li>
-										</template>
+													{{l.title}}
+												</span>
+											</router-link>
+										</li>
 									</ul>
 									<label class="hidden-hint" :for="n.id + 'checker'">
 										Show hidden lists ({{n.lists.length}})...
@@ -220,21 +206,15 @@
 					</div>
 					<div
 							class="app-content"
-							:class="[
-								{
-									'fullpage-overlay': fullpage,
-									'is-menu-enabled': menuActive,
-								},
-								$route.name,
-							]"
+							:class="{
+								'fullpage-overlay': fullpage,
+								'is-menu-enabled': menuActive,
+							}"
 					>
 						<a class="mobile-overlay" v-if="menuActive" @click="menuActive = false"></a>
 						<transition name="fade">
 							<router-view/>
 						</transition>
-						<a class="keyboard-shortcuts-button" @click="keyboardShortcutsActive = true">
-							<icon icon="keyboard"/>
-						</a>
 					</div>
 				</div>
 			</div>
@@ -288,10 +268,6 @@
 				<p>Please check your network connection and try again.</p>
 			</div>
 		</div>
-
-		<transition name="fade">
-			<keyboard-shortcuts v-if="keyboardShortcutsActive" @close="keyboardShortcutsActive = false"/>
-		</transition>
 	</div>
 </template>
 
@@ -301,17 +277,14 @@
 
 	import NamespaceService from './services/namespace'
 	import authTypes from './models/authTypes'
-	import Rights from './models/rights.json'
 
 	import swEvents from './ServiceWorker/events'
 	import Notification from './components/misc/notification'
 	import {CURRENT_LIST, IS_FULLPAGE, ONLINE} from './store/mutation-types'
-	import KeyboardShortcuts from './components/misc/keyboard-shortcuts'
 
 	export default {
 		name: 'app',
 		components: {
-			KeyboardShortcuts,
 			Notification,
 		},
 		data() {
@@ -321,7 +294,6 @@
 				currentDate: new Date(),
 				userMenuActive: false,
 				authTypes: authTypes,
-				keyboardShortcutsActive: false,
 
 				// Service Worker stuff
 				updateAvailable: false,
@@ -416,9 +388,6 @@
 					console.log('renewed token')
 				}
 			})
-
-			// This will hide the menu once clicked outside of it
-			this.$nextTick(() => document.addEventListener('click', () => this.userMenuActive = false))
 		},
 		watch: {
 			// call the method again if the route changes
@@ -426,7 +395,6 @@
 		},
 		computed: mapState({
 			userInfo: state => state.auth.info,
-			userAvatar: state => state.auth.avatarUrl,
 			userAuthenticated: state => state.auth.authenticated,
 			motd: state => state.config.motd,
 			online: ONLINE,
@@ -436,9 +404,6 @@
 			},
 			currentList: CURRENT_LIST,
 			background: 'background',
-			imprintUrl: state => state.config.legal.imprintUrl,
-			privacyPolicyUrl: state => state.config.legal.privacyPolicyUrl,
-			canWriteCurrentList: state => state.currentList.maxRight > Rights.READ,
 		}),
 		methods: {
 			logout() {
@@ -454,8 +419,6 @@
 				}
 			},
 			doStuffAfterRoute(e) {
-				// this.setTitle('') // Reset the title if the page component does not set one itself
-
 				if (this.$store.state[IS_FULLPAGE]) {
 					this.$store.commit(IS_FULLPAGE, false)
 				}

@@ -68,7 +68,6 @@ import { faList } from '@fortawesome/free-solid-svg-icons'
 import { faEllipsisV } from '@fortawesome/free-solid-svg-icons'
 import { faFilter } from '@fortawesome/free-solid-svg-icons'
 import { faFillDrip } from '@fortawesome/free-solid-svg-icons'
-import { faKeyboard } from '@fortawesome/free-solid-svg-icons'
 import { faComments } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
@@ -116,7 +115,6 @@ library.add(faList)
 library.add(faEllipsisV)
 library.add(faFilter)
 library.add(faFillDrip)
-library.add(faKeyboard)
 
 Vue.component('icon', FontAwesomeIcon)
 
@@ -127,19 +125,15 @@ Vue.use(VTooltip, {defaultHtml: false})
 // PWA
 import './registerServiceWorker'
 
-// Shortcuts
-import vueShortkey from 'vue-shortkey'
-Vue.use(vueShortkey)
-
 // Set focus
 Vue.directive('focus', {
 	// When the bound element is inserted into the DOM...
-	inserted: (el, {modifiers}) => {
+	inserted: el => {
 		// Focus the element only if the viewport is big enough
 		// auto focusing elements on mobile can be annoying since in these cases the
 		// keyboard always pops up and takes half of the available space on the screen.
 		// The threshhold is the same as the breakpoints in css.
-		if (window.innerWidth > 769 || (typeof modifiers.always !== 'undefined' && modifiers.always)) {
+		if (window.innerWidth > 769) {
 			el.focus()
 		}
 	}
@@ -149,13 +143,9 @@ Vue.directive('focus', {
 import message from './message'
 import {format, formatDistance} from 'date-fns'
 import {colorIsDark} from './helpers/colorIsDark'
-import {setTitle} from './helpers/setTitle'
 Vue.mixin({
 	methods: {
 		formatDateSince: date => {
-			if (typeof date === 'string') {
-				date = new Date(date)
-			}
 			const currentDate = new Date()
 			let formatted = '';
 			if (date > currentDate) {
@@ -168,16 +158,10 @@ Vue.mixin({
 
 			return formatted;
 		},
-		formatDate: date => {
-			if (typeof date === 'string') {
-				date = new Date(date)
-			}
-			return date ? format(date, 'PPPPpppp'): ''
-		},
+		formatDate: date => format(date, 'PPPPpppp'),
 		error: (e, context, actions = []) => message.error(e, context, actions),
 		success: (s, context, actions = []) => message.success(s, context, actions),
-		colorIsDark: colorIsDark,
-		setTitle: setTitle,
+		colorIsDark: colorIsDark
 	}
 })
 

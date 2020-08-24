@@ -51,9 +51,6 @@
 			this.listService = new ListService()
 			this.$store.commit(IS_FULLPAGE, true)
 		},
-		mounted() {
-			this.setTitle('Create a new list')
-		},
 		methods: {
 			newList() {
 				if (this.list.title === '') {

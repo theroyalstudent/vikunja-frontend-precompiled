@@ -19,7 +19,6 @@
 			:showNoOptions="false"
 			@tag="createAndAddLabel"
 			tag-placeholder="Add this as new label"
-			:disabled="disabled"
 	>
 		<template slot="tag" slot-scope="{ option }">
 						<span class="tag"
@@ -37,12 +36,11 @@
 
 <script>
 	import { differenceWith } from 'lodash'
+	import multiselect from 'vue-multiselect'
 
 	import LabelService from '../../../services/label'
 	import LabelModel from '../../../models/label'
 	import LabelTaskService from '../../../services/labelTask'
-	import LoadingComponent from '../../misc/loading'
-	import ErrorComponent from '../../misc/error'
 
 	export default {
 		name: 'edit-labels',
@@ -54,9 +52,6 @@
 			taskId: {
 				type: Number,
 				required: true,
-			},
-			disabled: {
-				default: false,
 			},
 		},
 		data() {
@@ -70,12 +65,7 @@
 			}
 		},
 		components: {
-			multiselect: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "multiselect" */ 'vue-multiselect'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
+			multiselect,
 		},
 		watch: {
 			value(newLabels) {

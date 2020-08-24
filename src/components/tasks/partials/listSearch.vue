@@ -29,8 +29,7 @@
 <script>
 	import ListService from '../../../services/list'
 	import ListModel from '../../../models/list'
-	import LoadingComponent from '../../misc/loading'
-	import ErrorComponent from '../../misc/error'
+	import multiselect from 'vue-multiselect'
 
 	export default {
 		name: 'listSearch',
@@ -42,12 +41,7 @@
 			}
 		},
 		components: {
-			multiselect: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "multiselect" */ 'vue-multiselect'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
+			multiselect,
 		},
 		beforeMount() {
 			this.listSerivce = new ListService()

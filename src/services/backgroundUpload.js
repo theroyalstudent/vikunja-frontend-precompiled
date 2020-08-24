@@ -8,6 +8,8 @@ export default class BackgroundUploadService extends AbstractService {
 		})
 	}
 
+	uploadProgress = 0
+
 	useCreateInterceptor() {
 		return false
 	}
@@ -23,10 +25,33 @@ export default class BackgroundUploadService extends AbstractService {
 	 * @returns {Promise<any|never>}
 	 */
 	create(listId, file) {
-		return this.uploadFile(
+
+		let data = new FormData()
+		data.append('background', new Blob([file]), file.name);
+
+		const cancel = this.setLoading()
+		return this.http.put(
 			this.getReplacedRoute(this.paths.create, {listId: listId}),
-			file,
-			'background'
+			data,
+			{
+				headers: {
+					'Content-Type':
+						'multipart/form-data; boundary=' + data._boundary,
+				},
+				onUploadProgress: progressEvent => {
+					this.uploadProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+				}
+			}
 		)
+			.catch(error => {
+				return this.errorHandler(error)
+			})
+			.then(response => {
+				return Promise.resolve(this.modelCreateFactory(response.data))
+			})
+			.finally(() => {
+				this.uploadProgress = 0
+				cancel()
+			})
 	}
 }

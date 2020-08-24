@@ -1,5 +1,5 @@
 <template>
-	<div class="loader-container is-max-width-desktop" :class="{ 'is-loading': taskCollectionService.loading}">
+	<div class="loader-container" :class="{ 'is-loading': taskCollectionService.loading}">
 		<div class="filter-container">
 			<div class="items">
 				<div class="search">
@@ -48,7 +48,7 @@
 			</transition>
 		</div>
 
-		<div class="field task-add" v-if="!list.isArchived && canWrite">
+		<div class="field task-add" v-if="!list.isArchived">
 			<div class="field is-grouped">
 				<p class="control has-icons-left is-expanded" :class="{ 'is-loading': taskService.loading}">
 					<input
@@ -77,21 +77,12 @@
 			</p>
 		</div>
 
-		<p v-if="tasks.length === 0" class="list-is-empty-notice">
-			This list is currently empty.
-		</p>
-
 		<div class="columns">
 			<div class="column">
 				<div class="tasks" v-if="tasks && tasks.length > 0" :class="{'short': isTaskEdit}">
 					<div class="task" v-for="t in tasks" :key="t.id">
-						<single-task-in-list
-								:the-task="t"
-								@taskUpdated="updateTasks"
-								task-detail-route="task.detail"
-								:disabled="!canWrite"
-						/>
-						<div @click="editTask(t.id)" class="icon settings" v-if="!list.isArchived && canWrite">
+						<single-task-in-list :the-task="t" @taskUpdated="updateTasks" task-detail-route="task.detail"/>
+						<div @click="editTask(t.id)" class="icon settings" v-if="!list.isArchived">
 							<icon icon="pencil-alt"/>
 						</div>
 					</div>
@@ -163,19 +154,12 @@
 
 <script>
 	import TaskService from '../../../services/task'
-	import TaskModel from '../../../models/task'
-	import LabelTaskService from '../../../services/labelTask'
-	import LabelService from '../../../services/label'
-	import LabelTask from '../../../models/labelTask'
-	import LabelModel from '../../../models/label'
-
 	import EditTask from '../../../components/tasks/edit-task'
+	import TaskModel from '../../../models/task'
 	import SingleTaskInList from '../../../components/tasks/partials/singleTaskInList'
 	import taskList from '../../../components/tasks/mixins/taskList'
 	import {saveListView} from '../../../helpers/saveListView'
 	import Filters from '../../../components/list/partials/filters'
-	import Rights from '../../../models/rights.json'
-	import {mapState} from 'vuex'
 
 	export default {
 		name: 'List',
@@ -188,8 +172,6 @@
 				newTaskText: '',
 
 				showError: false,
-				labelTaskService: LabelTaskService,
-				labelService: LabelService,
 			}
 		},
 		mixins: [
@@ -202,16 +184,11 @@
 		},
 		created() {
 			this.taskService = new TaskService()
-			this.labelService = new LabelService()
-			this.labelTaskService = new LabelTaskService()
 
 			// Save the current list view to local storage
 			// We use local storage and not vuex here to make it persistent across reloads.
 			saveListView(this.$route.params.listId, this.$route.name)
 		},
-		computed: mapState({
-			canWrite: state => state.currentList.maxRight > Rights.READ,
-		}),
 		methods: {
 			// This function initializes the tasks page and loads the first page of tasks
 			initTasks(page, search = '') {
@@ -228,107 +205,10 @@
 
 				let task = new TaskModel({title: this.newTaskText, listId: this.$route.params.listId})
 				this.taskService.create(task)
-					.then(task => {
-						this.tasks.push(task)
+					.then(r => {
+						this.tasks.push(r)
 						this.sortTasks()
 						this.newTaskText = ''
-
-						// Check if the task has words starting with ~ in the title and make them to labels
-						const parts = task.title.split(' ~')
-						// The first element will always contain the title, even if there is no occurrence of ~
-						if (parts.length > 1) {
-
-							// First, create an unresolved promise for each entry in the array to wait
-							// until all labels are added to update the task title once again
-							let labelAddings = []
-							let labelAddsToWaitFor = []
-							parts.forEach((p, index) => {
-								if (index < 1) {
-									return
-								}
-
-								labelAddsToWaitFor.push(new Promise((resolve, reject) => {
-									labelAddings.push({resolve: resolve, reject: reject})
-								}))
-							})
-
-							// Then do everything that is involved in finding, creating and adding the label to the task
-							parts.forEach((p, index) => {
-								if (index < 1) {
-									return
-								}
-
-								// The part up until the next space
-								const labelTitle = p.split(' ')[0]
-
-								// Check if the label exists
-								this.labelService.getAll({}, {s: labelTitle})
-									.then(res => {
-										// Label found, use it
-										if (res.length > 0 && res[0].title === labelTitle) {
-											const labelTask = new LabelTask({
-												taskId: task.id,
-												labelId: res[0].id,
-											})
-											this.labelTaskService.create(labelTask)
-												.then(result => {
-													task.labels.push(res[0])
-
-													// Remove the label text from the task title
-													task.title = task.title.replace(` ~${labelTitle}`, '')
-
-													// Make the promise done (the one with the index 0 does not exist)
-													labelAddings[index-1].resolve(result)
-												})
-												.catch(e => {
-													this.error(e, this)
-												})
-										} else {
-											// label not found, create it
-											const label = new LabelModel({title: labelTitle})
-											this.labelService.create(label)
-												.then(res => {
-													const labelTask = new LabelTask({
-														taskId: task.id,
-														labelId: res.id,
-													})
-													this.labelTaskService.create(labelTask)
-														.then(result => {
-															task.labels.push(res)
-
-															// Remove the label text from the task title
-															task.title = task.title.replace(` ~${labelTitle}`, '')
-
-															// Make the promise done (the one with the index 0 does not exist)
-															labelAddings[index-1].resolve(result)
-														})
-														.catch(e => {
-															this.error(e, this)
-														})
-												})
-												.catch(e => {
-													this.error(e, this)
-												})
-										}
-									})
-									.catch(e => {
-										this.error(e, this)
-									})
-							})
-
-							// This waits to update the task until all labels have been added and the title has
-							// been modified to remove each label text
-							Promise.all(labelAddsToWaitFor)
-								.then(() => {
-									this.taskService.update(task)
-										.then(updatedTask => {
-											this.updateTasks(updatedTask)
-										})
-										.catch(e => {
-											this.error(e, this)
-										})
-								})
-						}
 					})
 					.catch(e => {
 						this.error(e, this)

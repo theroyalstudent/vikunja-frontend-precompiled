@@ -1,6 +1,6 @@
 import axios from 'axios'
 import {reduce, replace} from 'lodash'
-import {objectToSnakeCase} from '../helpers/case'
+import { objectToSnakeCase } from '../helpers/case'
 
 export default class AbstractService {
 
@@ -10,7 +10,6 @@ export default class AbstractService {
 
 	http = null
 	loading = false
-	uploadProgress = 0
 	paths = {
 		create: '',
 		get: '',
@@ -135,10 +134,10 @@ export default class AbstractService {
 		pattern = new RegExp(pattern instanceof RegExp ? pattern.source : pattern, 'g')
 
 		for (let parameter; (parameter = pattern.exec(route)) !== null;) {
-			replace$$1[parameter[0]] = parameters[parameter[1]]
+			replace$$1[parameter[0]] = parameters[parameter[1]];
 		}
 
-		return replace$$1
+		return replace$$1;
 	}
 
 	/**
@@ -310,9 +309,7 @@ export default class AbstractService {
 				return this.errorHandler(error)
 			})
 			.then(response => {
-				const result = this.modelGetFactory(response.data)
-				result.maxRight = Number(response.headers['x-max-right'])
-				return Promise.resolve(result)
+				return Promise.resolve(this.modelGetFactory(response.data))
 			})
 			.finally(() => {
 				cancel()
@@ -379,11 +376,7 @@ export default class AbstractService {
 				return this.errorHandler(error)
 			})
 			.then(response => {
-				const result = this.modelCreateFactory(response.data)
-				if(typeof model.maxRight !== 'undefined') {
-					result.maxRight = model.maxRight
-				}
-				return Promise.resolve(result)
+				return Promise.resolve(this.modelCreateFactory(response.data))
 			})
 			.finally(() => {
 				cancel()
@@ -405,11 +398,7 @@ export default class AbstractService {
 				return this.errorHandler(error)
 			})
 			.then(response => {
-				const result = this.modelUpdateFactory(response.data)
-				if(typeof model.maxRight !== 'undefined') {
-					result.maxRight = model.maxRight
-				}
-				return Promise.resolve(result)
+				return Promise.resolve(this.modelUpdateFactory(response.data))
 			})
 			.finally(() => {
 				cancel()
@@ -451,64 +440,6 @@ export default class AbstractService {
 				return Promise.resolve(response.data)
 			})
 			.finally(() => {
-				cancel()
-			})
-	}
-
-	/**
-	 * Uploads a file to a url.
-	 * @param url
-	 * @param file
-	 * @param fieldName The name of the field the file is uploaded to.
-	 * @returns {Q.Promise<unknown>}
-	 */
-	uploadFile(url, file, fieldName) {
-		return this.uploadBlob(url, new Blob([file]), fieldName, file.name)
-	}
-
-	/**
-	 * Uploads a blob to a url.
-	 * @param url
-	 * @param blob
-	 * @param fieldName
-	 * @param filename
-	 * @returns {Q.Promise<unknown>}
-	 */
-	uploadBlob(url, blob, fieldName, filename) {
-		const data = new FormData()
-		data.append(fieldName, blob, filename)
-		return this.uploadFormData(url, data)
-	}
-
-	/**
-	 * Uploads a form data object.
-	 * @param url
-	 * @param formData
-	 * @returns {Q.Promise<unknown>}
-	 */
-	uploadFormData(url, formData) {
-		const cancel = this.setLoading()
-		return this.http.put(
-			url,
-			formData,
-			{
-				headers: {
-					'Content-Type':
-						'multipart/form-data; boundary=' + formData._boundary,
-				},
-				onUploadProgress: progressEvent => {
-					this.uploadProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-				},
-			},
-		)
-			.catch(error => {
-				return this.errorHandler(error)
-			})
-			.then(response => {
-				return Promise.resolve(this.modelCreateFactory(response.data))
-			})
-			.finally(() => {
-				this.uploadProgress = 0
 				cancel()
 			})
 	}

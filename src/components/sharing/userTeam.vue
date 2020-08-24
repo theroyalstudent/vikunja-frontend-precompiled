@@ -17,8 +17,7 @@
 								:loading="searchService.loading"
 								:internal-search="true"
 								@search-change="find"
-								placeholder="Type to search..."
-								:showNoOptions="false"
+								placeholder="Type to search"
 								:label="searchLabel"
 								track-by="id">
 							<template slot="clear" slot-scope="props">
@@ -106,6 +105,7 @@
 </template>
 
 <script>
+	import multiselect from 'vue-multiselect'
 	import {mapState} from 'vuex'
 
 	import UserNamespaceService from '../../services/userNamespace'
@@ -123,8 +123,6 @@
 	import TeamModel from '../../models/team'
 
 	import rights from '../../models/rights'
-	import LoadingComponent from '../misc/loading'
-	import ErrorComponent from '../misc/error'
 
 	export default {
 		name: 'userTeamShare',
@@ -164,12 +162,7 @@
 			}
 		},
 		components: {
-			multiselect: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "multiselect" */ 'vue-multiselect'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
+			multiselect
 		},
 		computed: mapState({
 			userInfo: state => state.auth.info

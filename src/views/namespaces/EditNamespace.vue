@@ -1,5 +1,5 @@
 <template>
-	<div class="loader-container is-max-width-desktop" v-bind:class="{ 'is-loading': namespaceService.loading}">
+	<div class="loader-container" v-bind:class="{ 'is-loading': namespaceService.loading}">
 		<div class="notification is-warning" v-if="namespace.isArchived">
 			This namespace is archived.
 			It is not possible to create new lists or edit it.
@@ -30,15 +30,13 @@
 						<div class="field">
 							<label class="label" for="namespacedescription">Description</label>
 							<div class="control">
-								<editor
+								<textarea
 										:class="{ 'disabled': namespaceService.loading}"
 										:disabled="namespaceService.loading"
+										class="textarea"
 										placeholder="The namespaces description goes here..."
 										id="namespacedescription"
-										v-model="namespace.description"
-										:preview-is-default="false"
-										v-if="editorActive"
-								/>
+										v-model="namespace.description"></textarea>
 							</div>
 						</div>
 						<div class="field">
@@ -111,8 +109,6 @@
 	import NamespaceModel from '../../models/namespace'
 	import Fancycheckbox from '../../components/input/fancycheckbox'
 	import ColorPicker from '../../components/input/colorPicker'
-	import LoadingComponent from '../../components/misc/loading'
-	import ErrorComponent from '../../components/misc/error'
 
 	export default {
 		name: "EditNamespace",
@@ -124,19 +120,12 @@
 
 				namespace: NamespaceModel,
 				showDeleteModal: false,
-				editorActive: false,
 			}
 		},
 		components: {
 			ColorPicker,
 			Fancycheckbox,
 			manageSharing,
-			editor: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "editor" */ '../../components/input/editor'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
 		},
 		beforeMount() {
 			this.namespace.id = this.$route.params.id
@@ -157,14 +146,6 @@
 		},
 		methods: {
 			loadNamespace() {
-				// This makes the editor trigger its mounted function again which makes it forget every input
-				// it currently has in its textarea. This is a counter-hack to a hack inside of vue-easymde
-				// which made it impossible to detect change from the outside. Therefore the component would
-				// not update if new content from the outside was made available.
-				// See https://github.com/NikulinIlya/vue-easymde/issues/3
-				this.editorActive = false
-				this.$nextTick(() => this.editorActive = true)
-
 				let namespace = new NamespaceModel({id: this.$route.params.id})
 				this.namespaceService.get(namespace)
 					.then(r => {
@@ -172,7 +153,6 @@
 						// This will trigger the dynamic loading of components once we actually have all the data to pass to them
 						this.manageTeamsComponent = 'manageSharing'
 						this.manageUsersComponent = 'manageSharing'
-						this.setTitle(`Edit ${this.namespace.title}`)
 					})
 					.catch(e => {
 						this.error(e, this)

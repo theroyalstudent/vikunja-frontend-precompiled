@@ -1,35 +1,8 @@
 <template>
-	<div class="is-max-width-desktop show-tasks">
-		<fancycheckbox
-				class="is-pulled-right"
-				v-if="!showAll"
-				v-model="showNulls"
-				@change="loadPendingTasks"
-		>
-			Show tasks without dates
-		</fancycheckbox>
+	<div>
 		<h3 v-if="showAll">Current tasks</h3>
-		<h3 v-else>
-			Tasks from
-			<flat-pickr
-					:class="{ 'disabled': taskService.loading}"
-					class="input"
-					:disabled="taskService.loading"
-					v-model="cStartDate"
-					:config="flatPickerConfig"
-					@on-close="loadPendingTasks"
-			/>
-			until
-			<flat-pickr
-					:class="{ 'disabled': taskService.loading}"
-					class="input"
-					:disabled="taskService.loading"
-					v-model="cEndDate"
-					:config="flatPickerConfig"
-					@on-close="loadPendingTasks"
-			/>
-		</h3>
-		<template v-if="!taskService.loading && (!hasUndoneTasks || !tasks || tasks.length === 0)">
+		<h3 v-else>Tasks from {{startDate.toLocaleDateString()}} until {{endDate.toLocaleDateString()}}</h3>
+		<template v-if="!taskService.loading && (!hasUndoneTasks || !tasks)">
 			<h3 class="nothing">Nothing to do - Have a nice day!</h3>
 			<img src="/images/cool.svg" alt=""/>
 		</template>
@@ -47,34 +20,16 @@
 	import {HAS_TASKS} from '../../store/mutation-types'
 	import {mapState} from 'vuex'
 
-	import flatPickr from 'vue-flatpickr-component'
-	import 'flatpickr/dist/flatpickr.css'
-	import Fancycheckbox from '../../components/input/fancycheckbox'
-
 	export default {
 		name: 'ShowTasks',
 		components: {
-			Fancycheckbox,
 			SingleTaskInList,
-			flatPickr,
 		},
 		data() {
 			return {
 				tasks: [],
 				hasUndoneTasks: false,
 				taskService: TaskService,
-				showNulls: true,
-
-				cStartDate: null,
-				cEndDate: null,
-
-				flatPickerConfig: {
-					altFormat: 'j M Y H:i',
-					altInput: true,
-					dateFormat: 'Y-m-d H:i',
-					enableTime: true,
-					time_24hr: true,
-				},
 			}
 		},
 		props: {
@@ -84,18 +39,10 @@
 		},
 		created() {
 			this.taskService = new TaskService()
-			this.cStartDate = this.startDate
-			this.cEndDate = this.endDate
 			this.loadPendingTasks()
 		},
 		watch: {
 			'$route': 'loadPendingTasks',
-			startDate(newVal) {
-				this.cStartDate = newVal
-			},
-			endDate(newVal) {
-				this.cEndDate = newVal
-			},
 		},
 		computed: mapState({
 			userAuthenticated: state => state.auth.authenticated,
@@ -109,16 +56,6 @@
 					return
 				}
 
-				// Make sure all dates are date objects
-				this.cStartDate = new Date(this.cStartDate)
-				this.cEndDate = new Date(this.cEndDate)
-
-				if (this.showAll) {
-					this.setTitle('Current Tasks')
-				} else {
-					this.setTitle(`Tasks from ${this.cStartDate.toLocaleDateString()} until ${this.cEndDate.toLocaleDateString()}`)
-				}
-
 				const params = {
 					sort_by: ['due_date', 'id'],
 					order_by: ['desc', 'desc'],
@@ -126,26 +63,20 @@
 					filter_value: [false],
 					filter_comparator: ['equals'],
 					filter_concat: 'and',
-					filter_include_nulls: this.showNulls,
+					filter_include_nulls: true,
 				}
 				if (!this.showAll) {
-					if(this.showNulls) {
-						params.filter_by.push('start_date')
-						params.filter_value.push(this.cStartDate)
-						params.filter_comparator.push('greater')
+					params.filter_by.push('start_date')
+					params.filter_value.push(this.startDate)
+					params.filter_comparator.push('greater')
 
-						params.filter_by.push('end_date')
-						params.filter_value.push(this.cEndDate)
-						params.filter_comparator.push('less')
-					}
-
-					params.filter_by.push('due_date')
-					params.filter_value.push(this.cEndDate)
+					params.filter_by.push('end_date')
+					params.filter_value.push(this.endDate)
 					params.filter_comparator.push('less')
 
 					params.filter_by.push('due_date')
-					params.filter_value.push(this.cStartDate)
-					params.filter_comparator.push('greater')
+					params.filter_value.push(this.endDate)
+					params.filter_comparator.push('less')
 				}
 
 				this.taskService.getAll({}, params)
@@ -193,3 +124,22 @@
 		},
 	}
 </script>
+
+<style scoped>
+	h3 {
+		text-align: left;
+	}
+
+	h3.nothing {
+		text-align: center;
+		margin-top: 3em;
+	}
+
+	img {
+		margin-top: 2em;
+	}
+
+	.spinner.is-loading:after {
+		margin-left: calc(40% - 1em);
+	}
+</style>

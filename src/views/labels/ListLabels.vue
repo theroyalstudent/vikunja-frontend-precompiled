@@ -55,12 +55,10 @@
 							<div class="field">
 								<label class="label">Description</label>
 								<div class="control">
-									<editor
+									<textarea
+											class="textarea"
 											placeholder="Label description"
-											v-model="labelEditLabel.description"
-											:preview-is-default="false"
-											v-if="editorActive"
-									/>
+											v-model="labelEditLabel.description"></textarea>
 								</div>
 							</div>
 							<div class="field">
@@ -71,7 +69,7 @@
 							</div>
 							<div class="field has-addons">
 								<div class="control is-expanded">
-									<button type="submit" class="button is-fullwidth is-primary"
+									<button type="submit" class="button is-fullwidth is-success"
 											:class="{ 'is-loading': labelService.loading}">
 										Save
 									</button>
@@ -100,19 +98,11 @@
 	import LabelService from '../../services/label'
 	import LabelModel from '../../models/label'
 	import ColorPicker from '../../components/input/colorPicker'
-	import LoadingComponent from '../../components/misc/loading'
-	import ErrorComponent from '../../components/misc/error'
 
 	export default {
 		name: 'ListLabels',
 		components: {
 			ColorPicker,
-			editor: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "editor" */ '../../components/input/editor'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
 		},
 		data() {
 			return {
@@ -120,16 +110,12 @@
 				labels: [],
 				labelEditLabel: LabelModel,
 				isLabelEdit: false,
-				editorActive: false,
 			}
 		},
 		created() {
 			this.labelService = new LabelService()
 			this.labelEditLabel = new LabelModel()
 			this.loadLabels()
-		},
-		mounted() {
-			this.setTitle('Labels')
 		},
 		computed: mapState({
 			userInfo: state => state.auth.info
@@ -139,7 +125,7 @@
 				const getAllLabels = (page = 1) => {
 					return this.labelService.getAll({}, {}, page)
 						.then(labels => {
-							if (page < this.labelService.totalPages) {
+							if(page < this.labelService.totalPages) {
 								return getAllLabels(page + 1)
 									.then(nextLabels => {
 										return labels.concat(nextLabels)
@@ -196,14 +182,6 @@
 				}
 				this.labelEditLabel = label
 				this.isLabelEdit = true
-
-				// This makes the editor trigger its mounted function again which makes it forget every input
-				// it currently has in its textarea. This is a counter-hack to a hack inside of vue-easymde
-				// which made it impossible to detect change from the outside. Therefore the component would
-				// not update if new content from the outside was made available.
-				// See https://github.com/NikulinIlya/vue-easymde/issues/3
-				this.editorActive = false
-				this.$nextTick(() => this.editorActive = true)
 			}
 		}
 	}

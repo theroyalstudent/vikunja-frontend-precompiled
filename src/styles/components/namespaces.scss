@@ -16,9 +16,7 @@ $lists-per-row: 5;
   }
 
   .namespace {
-    &:not(:last-child) {
-      margin-bottom: 1rem;
-    }
+    margin-bottom: 1rem;
 
     h1 {
       display: flex;

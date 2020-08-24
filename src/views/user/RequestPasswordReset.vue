@@ -26,7 +26,6 @@
 				</div>
 				<router-link :to="{ name: 'user.login' }" class="button is-primary">Login</router-link>
 			</div>
-			<legal/>
 		</div>
 	</div>
 </template>
@@ -34,12 +33,8 @@
 <script>
 	import PasswordResetModel from '../../models/passwordReset'
 	import PasswordResetService from '../../services/passwordReset'
-	import Legal from '../../components/misc/legal'
 
 	export default {
-		components: {
-			Legal,
-		},
 		data() {
 			return {
 				passwordResetService: PasswordResetService,
@@ -51,9 +46,6 @@
 		created() {
 			this.passwordResetService = new PasswordResetService()
 			this.passwordReset = new PasswordResetModel()
-		},
-		mounted() {
-			this.setTitle('Reset your password')
 		},
 		methods: {
 			submit() {

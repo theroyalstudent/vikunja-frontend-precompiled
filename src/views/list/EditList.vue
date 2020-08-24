@@ -1,5 +1,5 @@
 <template>
-	<div class="loader-container edit-list is-max-width-desktop" :class="{ 'is-loading': listService.loading}">
+	<div class="loader-container edit-list" :class="{ 'is-loading': listService.loading}">
 		<div class="notification is-warning" v-if="list.isArchived">
 			This list is archived.
 			It is not possible to create new or edit tasks or it.
@@ -51,14 +51,13 @@
 						<div class="field">
 							<label class="label" for="listdescription">Description</label>
 							<div class="control">
-								<editor
+								<textarea
 										:class="{ 'disabled': listService.loading}"
 										:disabled="listService.loading"
+										class="textarea"
 										placeholder="The lists description goes here..."
 										id="listdescription"
-										v-model="list.description"
-										:preview-is-default="false"
-								/>
+										v-model="list.description"></textarea>
 							</div>
 						</div>
 						<div class="field">
@@ -113,11 +112,7 @@
 							<namespace-search @selected="selectNamespace"/>
 						</p>
 						<p class="control">
-							<button
-									type="submit"
-									class="button is-success"
-									@click="duplicateList"
-									:class="{'is-loading': listDuplicateService.loading}">
+							<button type="submit" class="button is-success" @click="duplicateList">
 								<span class="icon is-small">
 									<icon icon="plus"/>
 								</span>
@@ -171,8 +166,6 @@
 	import NamespaceSearch from '../../components/namespace/namespace-search'
 	import ListDuplicateService from '../../services/listDuplicateService'
 	import ListDuplicateModel from '../../models/listDuplicateModel'
-	import LoadingComponent from '../../components/misc/loading'
-	import ErrorComponent from '../../components/misc/error'
 
 	export default {
 		name: 'EditList',
@@ -197,12 +190,6 @@
 			Fancycheckbox,
 			LinkSharing,
 			manageSharing,
-			editor: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "editor" */ '../../components/input/editor'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
 		},
 		created() {
 			this.listService = new ListService()
@@ -231,7 +218,6 @@
 						// This will trigger the dynamic loading of components once we actually have all the data to pass to them
 						this.manageTeamsComponent = 'manageSharing'
 						this.manageUsersComponent = 'manageSharing'
-						this.setTitle(`Edit ${this.list.title}`)
 					})
 					.catch(e => {
 						this.error(e, this)

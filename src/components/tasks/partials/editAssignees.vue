@@ -17,11 +17,10 @@
 			track-by="id"
 			select-label="Assign this user"
 			:showNoOptions="false"
-			:disabled="disabled"
 		>
 		<template slot="tag" slot-scope="{ option }">
 			<user :user="option" :show-username="false" :avatar-size="30"/>
-			<a @click="removeAssignee(option)" class="remove-assignee" v-if="!disabled">
+			<a @click="removeAssignee(option)" class="remove-assignee">
 				<icon icon="times"/>
 			</a>
 		</template>
@@ -35,24 +34,18 @@
 
 <script>
 	import {differenceWith} from 'lodash'
+	import multiselect from 'vue-multiselect'
 
 	import UserModel from '../../../models/user'
 	import ListUserService from '../../../services/listUsers'
 	import TaskAssigneeService from '../../../services/taskAssignee'
 	import User from '../../misc/user'
-	import LoadingComponent from '../../misc/loading'
-	import ErrorComponent from '../../misc/error'
 
 	export default {
 		name: 'editAssignees',
 		components: {
 			User,
-			multiselect: () => ({
-				component: import(/* webpackPrefetch: true *//* webpackChunkName: "multiselect" */ 'vue-multiselect'),
-				loading: LoadingComponent,
-				error: ErrorComponent,
-				timeout: 60000,
-			}),
+			multiselect,
 		},
 		props: {
 			taskId: {
@@ -66,10 +59,7 @@
 			initialAssignees: {
 				type: Array,
 				default: () => [],
-			},
-			disabled: {
-				default: false,
-			},
+			}
 		},
 		data() {
 			return {

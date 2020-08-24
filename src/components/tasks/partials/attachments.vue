@@ -6,7 +6,6 @@
 			</span>
 			Attachments
 			<a
-					v-if="editEnabled"
 					class="button is-primary is-outlined is-small noshadow"
 					@click="$refs.files.click()"
 					:disabled="attachmentService.loading">
@@ -15,7 +14,7 @@
 			</a>
 		</h3>
 
-		<input type="file" id="files" ref="files" multiple @change="uploadNewAttachment()" :disabled="attachmentService.loading" v-if="editEnabled"/>
+		<input type="file" id="files" ref="files" multiple @change="uploadNewAttachment()" :disabled="attachmentService.loading"/>
 		<progress v-if="attachmentService.uploadProgress > 0" class="progress is-primary" :value="attachmentService.uploadProgress" max="100">{{ attachmentService.uploadProgress }}%</progress>
 
 		<table>
@@ -42,7 +41,7 @@
 								<icon icon="cloud-download-alt"/>
 							</span>
 						</a>
-						<a v-if="editEnabled" class="button is-danger noshadow" v-tooltip="'Delete this attachment'" @click="() => {attachmentToDelete = a; showDeleteModal = true}">
+						<a class="button is-danger noshadow" v-tooltip="'Delete this attachment'" @click="() => {attachmentToDelete = a; showDeleteModal = true}">
 							<span class="icon">
 								<icon icon="trash-alt"/>
 							</span>
@@ -53,7 +52,7 @@
 		</table>
 
 		<!-- Dropzone -->
-		<div class="dropzone" :class="{ 'hidden': !showDropzone }" v-if="editEnabled">
+		<div class="dropzone" :class="{ 'hidden': !showDropzone }">
 			<div class="drop-hint">
 				<div class="icon">
 					<icon icon="cloud-upload-alt"/>
@@ -80,7 +79,6 @@
 	import AttachmentService from '../../../services/attachment'
 	import AttachmentModel from '../../../models/attachment'
 	import User from '../../misc/user'
-	import {mapState} from 'vuex'
 
 	export default {
 		name: 'attachments',
@@ -89,6 +87,7 @@
 		},
 		data() {
 			return {
+				attachments: [],
 				attachmentService: AttachmentService,
 				showDropzone: false,
 
@@ -103,17 +102,12 @@
 			},
 			initialAttachments: {
 				type: Array,
-			},
-			editEnabled: {
-				default: true,
-			},
+			}
 		},
 		created() {
 			this.attachmentService = new AttachmentService()
+			this.attachments = this.initialAttachments
 		},
-		computed: mapState({
-			attachments: state => state.attachments.attachments
-		}),
 		mounted() {
 			document.addEventListener('dragenter', e => {
 				e.stopPropagation()
@@ -142,6 +136,11 @@
 				this.showDropzone = false
 			})
 		},
+		watch: {
+			initialAttachments(newVal) {
+				this.attachments = newVal
+			},
+		},
 		methods: {
 			downloadAttachment(attachment) {
 				this.attachmentService.download(attachment)
@@ -159,7 +158,7 @@
 					.then(r => {
 						if(r.success !== null) {
 							r.success.forEach(a => {
-								this.$store.commit('attachments/add', a)
+								this.attachments.push(a)
 								this.$store.dispatch('tasks/addTaskAttachment', {taskId: this.taskId, attachment: a})
 							})
 						}
@@ -172,11 +171,17 @@
 					.catch(e => {
 						this.error(e, this)
 					})
+
 			},
 			deleteAttachment() {
 				this.attachmentService.delete(this.attachmentToDelete)
 					.then(r => {
-						this.$store.commit('attachments/removeById', this.attachmentToDelete.id)
+						// Remove the file from the list
+						for (const a in this.attachments) {
+							if (this.attachments[a].id === this.attachmentToDelete.id) {
+								this.attachments.splice(a, 1)
+							}
+						}
 						this.success(r, this)
 					})
 					.catch(e => {
