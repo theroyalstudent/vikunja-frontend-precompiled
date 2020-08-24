@@ -1,4 +1,4 @@
-importScripts("/precache-manifest.d5ef6d4e1cea15e2a1d1b80a07fa9078.js", "/workbox-v4.3.1/workbox-sw.js");
+importScripts("/precache-manifest.e648ce51c69f9e3b5d7f0e143eff15a4.js", "/workbox-v4.3.1/workbox-sw.js");
 workbox.setConfig({modulePathPrefix: "/workbox-v4.3.1"});
 /* eslint-disable no-console */
 /* eslint-disable no-undef */
@@ -14,6 +14,12 @@ workbox.routing.registerRoute(
 workbox.routing.registerRoute(
 	new RegExp('api\\/v1\\/.*$'),
 	new workbox.strategies.NetworkOnly()
+);
+
+// Cache everything else
+workbox.routing.registerRoute(
+	new RegExp('.*'),
+    new workbox.strategies.StaleWhileRevalidate()
 );
 
 // This code listens for the user's confirmation to update the app.
